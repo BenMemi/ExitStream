@@ -9,7 +9,7 @@ import "./TestCoin.sol";
 
 
 contract YourContract {
-
+  uint SafetyAmount = 10; 
   
 
   struct Account { 
@@ -38,7 +38,7 @@ contract YourContract {
   }
 
   function canLiquidate (address _account) public view returns (bool isSafe) {
-    (uint quitient, uint remainder) = getAccountCollaterization(_account);
+    (uint quitient, uint _remainder) = getAccountCollaterization(_account);
     if (quitient <= 0) {
       isSafe = true;
     } else {
@@ -54,6 +54,15 @@ contract YourContract {
     require(acceptedTokens[_token]);
     ERC20(_token).transferFrom(msg.sender, address(this), _amount);
     accounts[msg.sender].deposited += _amount;
+  }
+
+  function addSafety(uint256 _amount, address _token) public {
+    require(_amount > 0);
+    require(acceptedTokens[_token]);
+    Account memory user_account = getAccount(msg.sender);
+    require(user_account.safety < SafetyAmount);
+    ERC20(_token).transferFrom(msg.sender, address(this), _amount);
+    accounts[msg.sender].safety += _amount;
   }
 
   function borrow(uint256 _amount, address _token) public {
