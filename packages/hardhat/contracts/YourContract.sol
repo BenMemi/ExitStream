@@ -37,6 +37,7 @@ contract YourContract {
         remainder = user_account.deposited - user_account.borrowed * quotient;
   }
 
+
   function canLiquidate (address _account) public view returns (bool isSafe) {
     (uint quitient, uint _remainder) = getAccountCollaterization(_account);
     if (quitient <= 0) {
@@ -50,46 +51,47 @@ contract YourContract {
 
   //TODO Add in superfluid functionality here 
   function deposit(uint256 _amount, address _token) public {
-    require(_amount > 0);
-    require(acceptedTokens[_token]);
+    require(_amount > 0, "Must be depositing a positive amount");
+    require(acceptedTokens[_token], "Must be depositing a token that is accepted");
     ERC20(_token).transferFrom(msg.sender, address(this), _amount);
     accounts[msg.sender].deposited += _amount;
   }
 
+  //TODO: There is a better way of managing this instead of a seperate function
   function addSafety(uint256 _amount, address _token) public {
-    require(_amount > 0);
-    require(acceptedTokens[_token]);
+    require(_amount > 0, "Must be adding a positive amount");
+    require(acceptedTokens[_token], "Must be depositing a token that is accepted");
     Account memory user_account = getAccount(msg.sender);
-    require(user_account.safety < SafetyAmount);
+    require(user_account.safety < SafetyAmount, "Safety limit reached allready");
     ERC20(_token).transferFrom(msg.sender, address(this), _amount);
     accounts[msg.sender].safety += _amount;
   }
 
   function borrow(uint256 _amount, address _token) public {
     Account memory user_account = getAccount(msg.sender);
-    require(acceptedTokens[_token]);
-    require(_amount > 0);
-    require(user_account.deposited >= _amount);
+    require(acceptedTokens[_token], "Must be depositing a token that is accepted");
+    require(_amount > 0, "Must be depositing a positive amount");
+    require(user_account.deposited >= _amount, "Must have enough deposited to borrow");
     ERC20(_token).transferFrom(address(this), msg.sender, _amount);
     accounts[msg.sender].borrowed += _amount;
   }
 
   function repay(uint256 _amount, address _token) public {
     Account memory user_account = getAccount(msg.sender);
-    require(acceptedTokens[_token]);
-    require(_amount > 0);
-    require(user_account.borrowed >= _amount);
+    require(acceptedTokens[_token], "Must be depositing a token that is accepted");
+    require(_amount > 0, "Must be depositing a positive amount");
+    require(user_account.borrowed >= _amount, "Cannot repay more than you have borrowed");
     ERC20(_token).transferFrom(msg.sender, address(this), _amount);
     accounts[msg.sender].borrowed -= _amount;
   }
 
   function withdraw(uint256 _amount, address _token) public {
     Account memory user_account = getAccount(msg.sender);
-    require(acceptedTokens[_token]);
-    require(_amount > 0);
-    require(user_account.safety >= _amount);
+    require(acceptedTokens[_token], "Must be depositing a token that is accepted");
+    require(_amount > 0, "Must be depositing a positive amount");
+    require(user_account.deposited >= _amount, "Cannot withdraw more than you have deposited");
     ERC20(_token).transferFrom(address(this), msg.sender, _amount);
-    accounts[msg.sender].safety -= _amount;
+    accounts[msg.sender].deposited -= _amount;
   }
 
   event SetPurpose(address sender, string purpose);
