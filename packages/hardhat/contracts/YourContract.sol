@@ -72,6 +72,7 @@ contract YourContract {
     require(acceptedTokens[_token], "Must be depositing a token that is accepted");
     require(_amount > 0, "Must be depositing a positive amount");
     require(user_account.deposited >= _amount, "Must have enough deposited to borrow");
+    require(user_account.safety >= SafetyAmount, "Must have enough safety to borrow");
     ERC20(_token).transferFrom(address(this), msg.sender, _amount);
     accounts[msg.sender].borrowed += _amount;
   }
@@ -92,6 +93,14 @@ contract YourContract {
     require(user_account.deposited >= _amount, "Cannot withdraw more than you have deposited");
     ERC20(_token).transferFrom(address(this), msg.sender, _amount);
     accounts[msg.sender].deposited -= _amount;
+  }
+
+  function reclaim (address _token) public{
+    Account memory user_account = getAccount(msg.sender);
+    require(user_account.borrowed <= 0, "Cannot reclaim if you are borrowing");
+    uint256 _amount = user_account.safety;
+    ERC20(_token).transferFrom(address(this), msg.sender, _amount);
+    accounts[msg.sender].safety -= _amount;
   }
 
   event SetPurpose(address sender, string purpose);
